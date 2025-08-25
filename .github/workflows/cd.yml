@@ -1,0 +1,97 @@
+name: CI/CD
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+  release:
+    types: [created]
+
+env:
+    FASTLANE_ANDROID_SECRET_JSON_VALUE: ${{ secrets.FASTLANE_ANDROID_SECRET_JSON_VALUE }}
+    FASTLANE_ANDROID_SECRET_JSON_PATH: ${{ github.workspace }}/api-key.json
+    FASTLANE_ANDROID_SIGNING_FILE_VALUE: ${{ secrets.FASTLANE_ANDROID_SIGNING_FILE_VALUE }}
+    FASTLANE_ANDROID_SIGNING_FILE_PATH: ${{ github.workspace }}/my-release-key.keystore
+    FASTLANE_ANDROID_SIGNING_KEYSTORE_PASS: ${{ secrets.FASTLANE_ANDROID_SIGNING_KEYSTORE_PASS }}
+    FASTLANE_ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.FASTLANE_ANDROID_SIGNING_KEY_ALIAS }}
+    FASTLANE_ANDROID_SIGNING_KEY_PASS: ${{ secrets.FASTLANE_ANDROID_SIGNING_KEY_PASS }}
+    GOOGLE_SERVICES_VALUE: ${{ secrets.GOOGLE_SERVICES_VALUE }}
+    GOOGLE_SERVICES_PATH: ${{ github.workspace }}/android/app/google-services.json
+
+jobs:
+  buildDebug:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Decode service file
+        run: echo "$GOOGLE_SERVICES_VALUE" | base64 --decode > "$GOOGLE_SERVICES_PATH"
+      - uses: maierj/fastlane-action@v3.1.0
+        with:
+          lane: buildDebug
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: buildDebug
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Decode service file
+        run: echo "$GOOGLE_SERVICES_VALUE" | base64 --decode > "$GOOGLE_SERVICES_PATH"
+      - uses: maierj/fastlane-action@v3.1.0
+        with:
+          lane: test
+
+  publishInternal:
+    name: Publish Internal Release
+    runs-on: ubuntu-latest
+    #needs: [buildDebug, test]
+    #if: github.event_name == 'release'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Decode signing and service files
+        run: |
+          echo "$FASTLANE_ANDROID_SIGNING_FILE_VALUE" | base64 --decode > "$FASTLANE_ANDROID_SIGNING_FILE_PATH"
+          echo "$FASTLANE_ANDROID_SECRET_JSON_VALUE" | base64 --decode > "$FASTLANE_ANDROID_SECRET_JSON_PATH"
+          echo "$GOOGLE_SERVICES_VALUE" | base64 --decode > "$GOOGLE_SERVICES_PATH"
+      - uses: maierj/fastlane-action@v3.1.0
+        with:
+          lane: internal
+      - run: ls -la android/app/build/outputs/apk/crypto/release/
+        continue-on-error: true
+      - name: Publish assets
+        uses: softprops/action-gh-release@v2
+        with:
+          #tag_name: ${{ github.event.release.tag_name }}
+          tag_name: 2.1.14-test
+          files: android/app/build/outputs/apk/crypto/release/app-crypto-release.apk
+
+  build:
+    name: Publish Build
+    runs-on: ubuntu-latest
+    #needs: [buildDebug, test]
+    #if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Decode signing and service files
+        run: |
+          echo "$FASTLANE_ANDROID_SIGNING_FILE_VALUE" | base64 --decode > "$FASTLANE_ANDROID_SIGNING_FILE_PATH"
+          echo "$FASTLANE_ANDROID_SECRET_JSON_VALUE" | base64 --decode > "$FASTLANE_ANDROID_SECRET_JSON_PATH"
+          echo "$GOOGLE_SERVICES_VALUE" | base64 --decode > "$GOOGLE_SERVICES_PATH"
+      - uses: maierj/fastlane-action@v3.1.0
+        with:
+          lane: build
+      - run: ls -la android/app/build/outputs/apk/crypto/release/
+        continue-on-error: true
+      - name: Upload to Github
+        uses: actions/upload-artifact@v4
+        with:
+          name: myst.apk
+          path: android/app/build/outputs/apk/crypto/release/app-crypto-release.apk
+          if-no-files-found: error
