@@ -2,9 +2,6 @@
 
 Mobile VPN app for Mysterium Network.
 
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-     alt="Get it on F-Droid"
-     height="80">](https://f-droid.org/packages/network.mysterium.vpn/)
 [<img src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png"
      alt="Get it on Google Play"
      height="80">](https://play.google.com/store/apps/details?id=network.mysterium.vpn)
@@ -80,16 +77,6 @@ See [example](https://github.com/mysteriumnetwork/mysterium-vpn-mobile/commit/61
 ### Public release
 
 Public releases are promoted and managed from the Google Play Console.
-
-### Updating CI image
-
-Repository contains Dockerfile which includes OpenJDK and Fastlane to build, test and publish Android from Docker.
-
-```
-TAG=1.0.0
-docker build -t mysteriumnetwork/mobile-ci:$TAG .
-docker push mysteriumnetwork/mobile-ci:$TAG
-```
 
 ## Contributing
 
