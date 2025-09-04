@@ -46,36 +46,11 @@ jobs:
         with:
           lane: test
 
-  publishInternal:
-    name: Publish Internal Release
-    runs-on: ubuntu-latest
-    #needs: [buildDebug, test]
-    #if: github.event_name == 'release'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - name: Decode signing and service files
-        run: |
-          echo "$FASTLANE_ANDROID_SIGNING_FILE_VALUE" | base64 --decode > "$FASTLANE_ANDROID_SIGNING_FILE_PATH"
-          echo "$FASTLANE_ANDROID_SECRET_JSON_VALUE" | base64 --decode > "$FASTLANE_ANDROID_SECRET_JSON_PATH"
-          echo "$GOOGLE_SERVICES_VALUE" | base64 --decode > "$GOOGLE_SERVICES_PATH"
-      - uses: maierj/fastlane-action@v3.1.0
-        with:
-          lane: internal
-      - run: ls -la android/app/build/outputs/apk/crypto/release/
-        continue-on-error: true
-      - name: Publish assets
-        uses: softprops/action-gh-release@v2
-        with:
-          #tag_name: ${{ github.event.release.tag_name }}
-          tag_name: 2.1.14-test
-          files: android/app/build/outputs/apk/crypto/release/app-crypto-release.apk
-
   build:
     name: Publish Build
     runs-on: ubuntu-latest
-    #needs: [buildDebug, test]
-    #if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [buildDebug, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -87,11 +62,31 @@ jobs:
       - uses: maierj/fastlane-action@v3.1.0
         with:
           lane: build
-      - run: ls -la android/app/build/outputs/apk/crypto/release/
-        continue-on-error: true
       - name: Upload to Github
         uses: actions/upload-artifact@v4
         with:
           name: myst.apk
           path: android/app/build/outputs/apk/crypto/release/app-crypto-release.apk
           if-no-files-found: error
+
+  release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs: [buildDebug, test]
+    if: github.event_name == 'release'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Decode signing and service files
+        run: |
+          echo "$FASTLANE_ANDROID_SIGNING_FILE_VALUE" | base64 --decode > "$FASTLANE_ANDROID_SIGNING_FILE_PATH"
+          echo "$FASTLANE_ANDROID_SECRET_JSON_VALUE" | base64 --decode > "$FASTLANE_ANDROID_SECRET_JSON_PATH"
+          echo "$GOOGLE_SERVICES_VALUE" | base64 --decode > "$GOOGLE_SERVICES_PATH"
+      - uses: maierj/fastlane-action@v3.1.0
+        with:
+          lane: internal
+      - name: Publish assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: android/app/build/outputs/apk/crypto/release/app-crypto-release.apk
