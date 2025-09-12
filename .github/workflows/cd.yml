@@ -50,7 +50,7 @@ jobs:
     name: Publish Build
     runs-on: ubuntu-latest
     needs: [buildDebug, test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'release'
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -62,12 +62,11 @@ jobs:
       - uses: maierj/fastlane-action@v3.1.0
         with:
           lane: build
-      - name: Upload to Github
-        uses: actions/upload-artifact@v4
+      - name: Publish assets
+        uses: softprops/action-gh-release@v2
         with:
-          name: myst.apk
-          path: android/app/build/outputs/apk/crypto/release/app-crypto-release.apk
-          if-no-files-found: error
+          tag_name: ${{ github.event.release.tag_name }}
+          files: android/app/build/outputs/apk/crypto/release/app-crypto-release.apk
 
   release:
     name: Publish Release
@@ -85,8 +84,3 @@ jobs:
       - uses: maierj/fastlane-action@v3.1.0
         with:
           lane: internal
-      - name: Publish assets
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.release.tag_name }}
-          files: android/app/build/outputs/apk/crypto/release/app-crypto-release.apk
