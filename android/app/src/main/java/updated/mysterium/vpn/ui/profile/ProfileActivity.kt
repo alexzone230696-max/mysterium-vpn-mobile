@@ -1,6 +1,5 @@
 package updated.mysterium.vpn.ui.profile
 
-import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -33,7 +32,7 @@ class ProfileActivity : BaseActivity() {
     private val viewModel: ProfileViewModel by inject()
     private val appNotificationManager: AppNotificationManager by inject()
     private var identityAddress = ""
-    private val storagePermissions = arrayOf(READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE)
+    private val storagePermissions = arrayOf(WRITE_EXTERNAL_STORAGE)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
