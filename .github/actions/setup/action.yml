@@ -1,0 +1,36 @@
+name: Setup Android CI Environment
+description: Shared setup for Android CI jobs
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: 17
+        cache: 'gradle'
+        cache-dependency-path: |
+          android/*.gradle*
+          android/**/gradle-wrapper.properties
+
+    - uses: android-actions/setup-android@v3
+      with:
+        cmdline-tools-version: 7302050
+        packages: "tools platform-tools extras;android;m2repository extras;google;m2repository extras;google;google_play_services platforms;android-29 build-tools;30.0.3 ndk;21.4.7075529"
+
+    - run: sdkmanager --list_installed
+      shell: bash
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '2.7'
+        bundler-cache: true
+
+    - run: fastlane --version
+      shell: bash
+
+    - name: Install Ruby gems
+      run: bundle install --frozen
+      shell: bash
+
+    - run: fastlane --version
+      shell: bash
