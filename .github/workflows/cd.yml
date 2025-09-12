@@ -62,11 +62,13 @@ jobs:
       - uses: maierj/fastlane-action@v3.1.0
         with:
           lane: build
+      - name: Rename APK to myst.apk
+        run: mv android/app/build/outputs/apk/crypto/release/app-crypto-release.apk android/app/build/outputs/apk/crypto/release/myst.apk
       - name: Publish assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
-          files: android/app/build/outputs/apk/crypto/release/app-crypto-release.apk
+          files: android/app/build/outputs/apk/crypto/release/myst.apk
 
   release:
     name: Publish Release
